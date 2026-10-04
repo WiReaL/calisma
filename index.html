@@ -19,6 +19,7 @@ html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;backgrou
 .col{display:flex;flex-direction:column}
 .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px}
+.plain{background:transparent;border:0;padding:0 2px}
 .row{display:flex;align-items:center;gap:8px}
 .sp{justify-content:space-between}
 .mu{color:var(--mu);font-size:13px}
@@ -49,16 +50,26 @@ label{display:block;font-size:12px;color:var(--mu);margin:10px 0 4px}
 .chips{display:flex;gap:4px;overflow:hidden;flex:1;min-width:0}
 .chip{white-space:nowrap;background:var(--ac2);color:var(--ac);border-radius:8px;padding:2px 8px;font-size:13px}
 .chip.off{opacity:.45;text-decoration:line-through}
+.chipset{display:flex;flex-wrap:wrap;gap:6px}
+.opt{background:var(--ac2);color:var(--ac);border:0;border-radius:20px;padding:7px 13px;font-size:15px;cursor:pointer}
+.opt.on{background:var(--ac);color:#fff}
 .pill{background:var(--ac2);color:var(--ac);border-radius:20px;padding:4px 12px;font-weight:600;white-space:nowrap}
 .bar{height:6px;background:var(--ac2);border-radius:6px;overflow:hidden;margin:8px 0 4px}
 .bar i{display:block;height:100%;background:var(--ac)}
 .grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-.wd{font-size:11px;line-height:20px}
-.cell{height:28px;width:28px;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:50%;position:relative;margin:0 auto;cursor:pointer}
+.wd{font-size:11px;line-height:18px}
+.cell{height:26px;width:26px;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:50%;position:relative;margin:0 auto;cursor:pointer}
 .cell.big{height:38px;width:38px;font-size:15px}
 .cell.today{color:var(--ac);font-weight:700}
 .cell.sel{background:var(--ac);color:#fff}
-.cell.ev::after{content:'';position:absolute;bottom:2px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--bad)}
+.cell.ev::after{content:'';position:absolute;bottom:1px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--bad)}
+.evline{display:flex;gap:8px;align-items:center;border-top:1px solid var(--bd);margin-top:6px;padding-top:7px;font-size:13px;overflow:hidden;white-space:nowrap;cursor:pointer}
+.evt{color:var(--bad);overflow:hidden;text-overflow:ellipsis}
+.upwrap{padding:0 2px}
+.up{display:flex;gap:8px;font-size:12px;opacity:.55;line-height:1.55;cursor:pointer}
+.uw{width:46px;flex:none;font-weight:600}
+.ut{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tcard{padding:9px 12px}
 .seg{display:flex;background:var(--ac2);border-radius:12px;padding:3px;gap:2px}
 .seg button{flex:1;background:none;border:0;color:var(--ac);padding:8px;border-radius:10px;cursor:pointer}
 .seg button.on{background:var(--card);font-weight:600}
@@ -95,6 +106,9 @@ const KEY='calisma_plani_v1';
 const $=id=>document.getElementById(id);
 const DAYS=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
 const MON=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const SUBJ=['Matematik','Fizik','Kimya','Biyoloji','Türkçe','Soru Çözümü','Ödev'];
+const ALLS=[...SUBJ,'Diğer'];
+const AREAS=['TYT','AYT','TYT/AYT'];
 const pad=n=>String(n).padStart(2,'0');
 const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
@@ -111,6 +125,7 @@ const hrs=m=>(m/60).toFixed(1)+' sa';
 const net=(d,y)=>(+d||0)-(+y||0)/4;
 const nf=n=>n.toFixed(2).replace(/\.?0+$/,'')||'0';
 const G=a=>a.map(t=>({id:uid(),text:t,done:false}));
+const lbl=b=>(b.area?b.area+' ':'')+b.subject;
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1800)}
 
 const IC=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -127,16 +142,16 @@ const ICON={
 
 /* ---------- Veri ---------- */
 function defaults(){
-  const T=(day,start,end,subject,topic='')=>({id:uid(),day,start,end,subject,topic});
+  const T=(day,start,end,subject,area,topic='')=>({id:uid(),day,start,end,subject,area,topic});
   return{
     tpl:[
-      T(0,'19:30','21:00','Paragraf ve Türkçe'),
-      T(1,'19:30','21:00','TYT Matematik','3 video'),
-      T(2,'18:15','19:45','Biyoloji','AYT tekrar'),
-      T(3,'19:30','21:00','TYT Matematik'),
-      T(4,'19:30','21:00','AYT Matematik'),
-      T(5,'14:00','16:00','TYT Matematik','Ödev'),
-      T(6,'14:00','16:00','Kimya','AYT + istatistik soru')
+      T(0,'19:30','21:00','Türkçe','TYT','Paragraf'),
+      T(1,'19:30','21:00','Matematik','TYT','3 video'),
+      T(2,'18:15','19:45','Biyoloji','AYT','Tekrar'),
+      T(3,'19:30','21:00','Matematik','TYT'),
+      T(4,'19:30','21:00','Matematik','AYT'),
+      T(5,'14:00','16:00','Matematik','TYT','Ödev'),
+      T(6,'14:00','16:00','Kimya','AYT','İstatistik soru')
     ],
     blocks:[],
     goals:{
@@ -145,15 +160,26 @@ function defaults(){
       '2026-10-05':G(['TYT Matematik EBOB-EKOK gelecek','AYT Geometri tekrar edilecek','AYT Biyoloji tekrar','DAGIS çalışılacak','Kimya çalışılacak'])
     },
     events:[{id:uid(),date:'2026-10-23',type:'Deneme',title:'Özdebir TYT Denemesi'}],
-    denemes:[],extra:[],images:[],pomo:{work:25,brk:5},theme:'auto'
+    denemes:[],extra:[],images:[],dayLog:{},pomo:{work:25,brk:5},theme:'auto'
   };
+}
+function migrate(x){
+  if(x.area!==undefined)return;
+  const m=/^(TYT\/AYT|TYT|AYT)\s+(.+)$/.exec(x.subject||'');
+  if(m&&SUBJ.includes(m[2])){x.area=m[1];x.subject=m[2]}else x.area='';
+}
+function normalize(){
+  S.pomo=S.pomo||{work:25,brk:5};
+  ['blocks','tpl','events','denemes','extra','images'].forEach(k=>{S[k]=S[k]||[]});
+  S.goals=S.goals||{};
+  S.dayLog=S.dayLog||{};
+  S.blocks.forEach(migrate);
+  S.tpl.forEach(migrate);
 }
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S)S=defaults();
-S.pomo=S.pomo||{work:25,brk:5};
-['blocks','tpl','events','denemes','extra','images'].forEach(k=>{S[k]=S[k]||[]});
-S.goals=S.goals||{};
+normalize();
 function save(){
   try{localStorage.setItem(KEY,JSON.stringify(S))}
   catch(e){alert('Kayıt başarısız: depolama dolmuş olabilir. Bazı görselleri sil veya yedek al.')}
@@ -174,7 +200,7 @@ function syncCal(){const d=parse(curDay);cal=new Date(d.getFullYear(),d.getMonth
 const dayBlocks=d=>S.blocks.filter(b=>b.date===d).sort((a,b)=>a.start.localeCompare(b.start));
 
 /* ---------- Hesaplamalar ---------- */
-function dayMin(d){
+function autoMin(d){
   let m=0;
   S.blocks.filter(b=>b.date===d).forEach(b=>{
     if(b.actual!=null&&b.actual!=='')m+=+b.actual;
@@ -183,6 +209,7 @@ function dayMin(d){
   S.extra.filter(e=>e.date===d).forEach(e=>m+=e.min);
   return m;
 }
+function dayMin(d){const v=S.dayLog[d];return v!=null?v:autoMin(d)}
 function wkMin(m){
   let a=0,wd=0,we=0;
   for(let i=0;i<7;i++){const x=dayMin(addDays(m,i));a+=x;if(i<5)wd+=x;else we+=x}
@@ -235,54 +262,104 @@ function calGrid(big){
     const ds=fmt(new Date(y,m,d));
     c+=`<div class="cell ${big?'big':''} ${ds===today()?'today':''} ${ds===curDay?'sel':''} ${S.events.some(e=>e.date===ds)?'ev':''}" onclick="selDay('${ds}',${big})">${d}</div>`;
   }
-  return`<div class="row sp" style="margin-bottom:4px"><button class="ic sm" onclick="calNav(-1)">‹</button><b>${MON[m]} ${y}</b><button class="ic sm" onclick="calNav(1)">›</button></div><div class="grid7">${c}</div>`;
+  return`<div class="row sp" style="margin-bottom:2px"><button class="ic sm" onclick="calNav(-1)">‹</button><b>${MON[m]} ${y}</b><button class="ic sm" onclick="calNav(1)">›</button></div><div class="grid7">${c}</div>`;
 }
 function calNav(n){cal=new Date(cal.getFullYear(),cal.getMonth()+n,1);render()}
 function selDay(ds,big){curDay=ds;syncCal();if(big){tab='bugun';sub=''}render()}
+function evLine(){
+  const es=S.events.filter(e=>e.date===curDay),d=parse(curDay);
+  return`<div class="evline" onclick="evTap()"><span class="mu">${d.getDate()} ${MON[d.getMonth()]}</span>${es.length?es.map(e=>`<span class="evt">● ${esc(e.title)}</span>`).join(''):'<span class="mu">Etkinlik yok</span>'}</div>`;
+}
+function evTap(){
+  const es=S.events.filter(e=>e.date===curDay);
+  if(!es.length){editEvent(null,curDay);return}
+  if(es.length===1){editEvent(es[0].id);return}
+  openModal(`<div class="title">${fd(curDay)}</div>
+  ${es.map(e=>`<div class="blk" onclick="editEvent('${e.id}')"><div style="flex:1"><b>${esc(e.title)}</b><div class="mu">${e.type}</div></div>›</div>`).join('')}
+  <div class="row" style="margin-top:12px"><button class="btn" onclick="editEvent(null,'${curDay}')">＋ Ekle</button><button class="ghost" onclick="closeModal()">Kapat</button></div>`);
+}
 
 /* ---------- BUGÜN ---------- */
 function blockRow(b){
   return`<div class="blk ${b.done?'done':''}"><input type="checkbox" ${b.done?'checked':''} onchange="tog('${b.id}')">
-  <div style="flex:1;min-width:0" onclick="editBlock('${b.id}')"><div class="t"><b>${esc(b.subject)}</b>${b.topic?' · '+esc(b.topic):''}</div>
-  <div class="mu">${b.start}–${b.end}${b.actual?' · '+b.actual+' dk':''}</div></div></div>`;
+  <div style="flex:1;min-width:0" onclick="editBlock('${b.id}')"><div class="t"><b>${esc(lbl(b))}</b>${b.topic?' · '+esc(b.topic):''}</div>
+  <div class="mu">${b.start}–${b.end}</div></div></div>`;
 }
 function tog(id){const b=S.blocks.find(x=>x.id===id);b.done=!b.done;save();render()}
 function vBugun(){
   const bl=dayBlocks(curDay),d=parse(curDay),dn=bl.filter(b=>b.done).length,nx=nextEvent();
+  const tm=dayMin(curDay),man=S.dayLog[curDay]!=null;
+  let up='';
+  for(let i=1;i<=4;i++){
+    const x=addDays(curDay,i),p=parse(x),b2=dayBlocks(x),es=S.events.filter(e=>e.date===x),parts=[];
+    if(b2.length)parts.push(esc(b2.map(b=>lbl(b)).join(', ')));
+    es.forEach(e=>parts.push(`<span class="evt">● ${esc(e.title)}</span>`));
+    up+=`<div class="up" onclick="selDay('${x}')"><span class="uw">${DAYS[dow(x)].slice(0,3)} ${p.getDate()}</span><span class="ut">${parts.join(' ')||'—'}</span></div>`;
+  }
   return`<div class="row sp">
     <button class="ic" onclick="goDay(-1)">‹</button>
     <div style="text-align:center" onclick="curDay=today();syncCal();render()">
       <div class="title">${d.getDate()} ${MON[d.getMonth()]}</div>
       <div class="mu">${DAYS[dow(curDay)]}${curDay!==today()?' · bugüne dön':''}</div></div>
     <button class="ic" onclick="goDay(1)">›</button></div>
-  <div class="card grow col">
+  <div class="plain grow col">
     <div class="row sp"><b>Plan${bl.length?` <span class="mu">${dn}/${bl.length}</span>`:''}</b>
       <div class="row" style="gap:6px"><button class="ic sm" onclick="showProgram()">${ICON.img}</button><button class="ic sm" onclick="editBlock(null,'${curDay}')">＋</button></div></div>
     <div class="scroll grow">${bl.length?bl.map(blockRow).join(''):'<div class="mu" style="padding:14px 0">Bu gün için plan yok.</div>'}</div>
   </div>
-  ${nx?`<div class="card row sp"><b>${esc(nx.title)}</b><span class="pill">${nx.left===0?'Bugün':nx.left+' gün kaldı'}</span></div>`:''}
-  <div class="card">${calGrid(false)}</div>`;
+  <div class="upwrap">${up}</div>
+  <div class="card tcard row sp">
+    <div><div>Çalışılan süre</div>${man?'':'<div class="mu" style="font-size:11px">otomatik</div>'}</div>
+    <div class="step"><button class="ic sm" onclick="adjTime(-15)">−</button><b onclick="timeModal()" style="min-width:92px">${Math.floor(tm/60)} sa ${tm%60} dk</b><button class="ic sm" onclick="adjTime(15)">＋</button></div>
+  </div>
+  ${nx?`<div class="card tcard row sp"><b>${esc(nx.title)}</b><span class="pill">${nx.left===0?'Bugün':nx.left+' gün kaldı'}</span></div>`:''}
+  <div class="card" style="padding:10px 12px">${calGrid(false)}${evLine()}</div>`;
 }
 function goDay(n){curDay=addDays(curDay,n);syncCal();render()}
+function adjTime(n){S.dayLog[curDay]=Math.max(0,dayMin(curDay)+n);save();render()}
+function timeModal(){
+  const t=dayMin(curDay),d=parse(curDay);
+  openModal(`<div class="title">Çalışılan süre</div><div class="mu">${d.getDate()} ${MON[d.getMonth()]}</div>
+  <div class="row"><div style="flex:1"><label>Saat</label><input type="number" inputmode="numeric" min="0" id="t_h" value="${Math.floor(t/60)}"></div>
+  <div style="flex:1"><label>Dakika</label><input type="number" inputmode="numeric" min="0" max="59" id="t_m" value="${t%60}"></div></div>
+  <p class="mu">Elle girdiğin süre, plandaki tiklerden hesaplanan süreyi geçersiz kılar.</p>
+  <div class="row"><button class="btn" style="flex:1" onclick="saveTime()">Kaydet</button><button class="ghost" onclick="closeModal()">İptal</button>${S.dayLog[curDay]!=null?'<button class="danger" onclick="autoTime()">Otomatik</button>':''}</div>`);
+}
+function saveTime(){
+  const h=Math.max(0,+$('t_h').value||0),m=Math.max(0,+$('t_m').value||0);
+  S.dayLog[curDay]=h*60+m;save();closeModal();render();
+}
+function autoTime(){delete S.dayLog[curDay];save();closeModal();render()}
 
 /* ---------- Blok formu ---------- */
-function subjectList(){
-  const base=['Matematik','Geometri','Kimya','Biyoloji','Fizik','Türkçe','Paragraf','Tarih','Coğrafya','Felsefe','Edebiyat'];
-  return[...new Set([...base,...S.blocks.map(b=>b.subject),...S.tpl.map(b=>b.subject)])];
+let F={subject:'',area:''};
+function pickS(i){
+  F.subject=ALLS[i];
+  document.querySelectorAll('#cs_s .opt').forEach((b,j)=>b.classList.toggle('on',j===i));
+  const o=$('f_other');o.style.display=F.subject==='Diğer'?'block':'none';
+  if(F.subject==='Diğer')o.focus();
+}
+function pickA(i){
+  F.area=F.area===AREAS[i]?'':AREAS[i];
+  document.querySelectorAll('#cs_a .opt').forEach((b,j)=>b.classList.toggle('on',AREAS[j]===F.area));
 }
 function editBlock(id,date,isT){
   const src=isT?S.tpl:S.blocks;
-  const b=id?src.find(x=>x.id===id):{subject:'',topic:'',start:'19:30',end:'21:00',date:date,day:0,actual:null};
+  const b=id?src.find(x=>x.id===id):{subject:'',area:'',topic:'',start:'19:30',end:'21:00',date:date,day:0};
+  const known=SUBJ.includes(b.subject);
+  F={subject:b.subject?(known?b.subject:'Diğer'):'',area:b.area||''};
   openModal(`<div class="title">${id?'Düzenle':'Yeni blok'}${isT?' (şablon)':''}</div>
   ${isT?`<label>Gün</label><select id="f_day">${DAYS.map((n,i)=>`<option value="${i}" ${b.day==i?'selected':''}>${n}</option>`).join('')}</select>`
        :`<label>Tarih</label><input type="date" id="f_date" value="${b.date}">`}
-  <label>Ders</label><input id="f_sub" list="subs" value="${esc(b.subject)}">
-  <datalist id="subs">${subjectList().map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
-  <label>Konu / not</label><input id="f_top" value="${esc(b.topic)}">
+  <label>Ders</label>
+  <div class="chipset" id="cs_s">${ALLS.map((x,i)=>`<button class="opt ${F.subject===x?'on':''}" onclick="pickS(${i})">${x}</button>`).join('')}</div>
+  <input id="f_other" placeholder="Ders adı" value="${known?'':esc(b.subject)}" style="margin-top:8px;display:${F.subject==='Diğer'?'block':'none'}">
+  <label>Alan</label>
+  <div class="chipset" id="cs_a">${AREAS.map((x,i)=>`<button class="opt ${F.area===x?'on':''}" onclick="pickA(${i})">${x}</button>`).join('')}</div>
+  <label>Detay (isteğe bağlı)</label><input id="f_top" placeholder="Örn. Köklü ifadeler, 3 video" value="${esc(b.topic)}">
   <div class="row"><div style="flex:1"><label>Başlangıç</label><input type="time" id="f_s" value="${b.start}"></div>
   <div style="flex:1"><label>Bitiş</label><input type="time" id="f_e" value="${b.end}"></div></div>
-  ${isT?'':`<label>Çalışılan süre (dk) — boşsa planlanan süre sayılır</label><input type="number" min="0" id="f_a" value="${b.actual??''}">`}
-  ${!isT&&id?'<p class="mu">Bu değişiklik sadece bu bloğu etkiler, şablon değişmez.</p>':''}
+  ${!isT&&id?'<p class="mu" style="margin:8px 0 0">Bu değişiklik sadece bu bloğu etkiler, şablon değişmez.</p>':''}
   <div class="row" style="margin-top:14px">
     <button class="btn" style="flex:1" onclick="saveBlock('${id||''}',${!!isT})">Kaydet</button>
     <button class="ghost" onclick="${isT?'openTpl()':'closeModal()'}">İptal</button>
@@ -290,14 +367,14 @@ function editBlock(id,date,isT){
   </div>`);
 }
 function saveBlock(id,isT){
-  const subject=$('f_sub').value.trim();
-  if(!subject){alert('Ders adı gir.');return}
-  const f={subject,topic:$('f_top').value.trim(),start:$('f_s').value||'19:30',end:$('f_e').value||'21:00'};
-  if(isT)f.day=+$('f_day').value;
-  else{f.date=$('f_date').value||curDay;const a=$('f_a').value;f.actual=a===''?null:+a}
+  if(!F.subject){alert('Bir ders seç.');return}
+  const subject=F.subject==='Diğer'?$('f_other').value.trim():F.subject;
+  if(!subject){alert('Ders adını yaz.');return}
+  const f={subject,area:F.area,topic:$('f_top').value.trim(),start:$('f_s').value||'19:30',end:$('f_e').value||'21:00'};
+  if(isT)f.day=+$('f_day').value;else f.date=$('f_date').value||curDay;
   const src=isT?S.tpl:S.blocks;
   if(id)Object.assign(src.find(x=>x.id===id),f);
-  else src.push(Object.assign({id:uid()},f,isT?{}:{done:false}));
+  else src.push(Object.assign({id:uid()},f,isT?{}:{done:false,actual:null}));
   save();
   if(isT)openTpl();else closeModal();
   render();
@@ -312,7 +389,7 @@ function delBlock(id,isT){
 function openTpl(){
   const l=[...S.tpl].sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start));
   openModal(`<div class="title">Haftalık şablon</div><p class="mu">Varsayılan haftan. "Şablondan doldur" ile haftalara kopyalanır.</p>
-  ${l.map(t=>`<div class="blk" onclick="editBlock('${t.id}',null,true)"><div style="flex:1"><b>${DAYS[t.day]}</b> · ${esc(t.subject)}${t.topic?' · '+esc(t.topic):''}<div class="mu">${t.start}–${t.end}</div></div>›</div>`).join('')||'<p class="mu">Şablon boş.</p>'}
+  ${l.map(t=>`<div class="blk" onclick="editBlock('${t.id}',null,true)"><div style="flex:1"><b>${DAYS[t.day]}</b> · ${esc(lbl(t))}${t.topic?' · '+esc(t.topic):''}<div class="mu">${t.start}–${t.end}</div></div>›</div>`).join('')||'<p class="mu">Şablon boş.</p>'}
   <div class="row" style="margin-top:12px"><button class="btn" onclick="editBlock(null,null,true)">＋ Ekle</button><button class="ghost" onclick="closeModal()">Kapat</button></div>`);
 }
 
@@ -323,7 +400,7 @@ function vHafta(){
   for(let i=0;i<7;i++){
     const d=addDays(curWk,i),bl=dayBlocks(d);
     days+=`<div class="drow ${d===today()?'tdy':''}" onclick="daySheet('${d}')"><span class="dw">${DAYS[i].slice(0,3)}</span><span class="dt mu">${fd(d)}</span>
-    <div class="chips">${bl.map(b=>`<span class="chip ${b.done?'off':''}">${esc(b.subject)}</span>`).join('')||'<span class="mu">—</span>'}</div></div>`;
+    <div class="chips">${bl.map(b=>`<span class="chip ${b.done?'off':''}">${esc(lbl(b))}</span>`).join('')||'<span class="mu">—</span>'}</div></div>`;
   }
   return`<div class="row sp">
     <button class="ic" onclick="wkNav(-1)">‹</button>
@@ -350,7 +427,7 @@ function wkMenu(){
 function daySheet(d){
   const bl=dayBlocks(d);
   openModal(`<div class="title">${DAYS[dow(d)]} <span class="mu">${fd(d)}</span></div>
-  ${bl.map(b=>`<div class="blk ${b.done?'done':''}" onclick="editBlock('${b.id}')"><div style="flex:1"><div class="t"><b>${esc(b.subject)}</b>${b.topic?' · '+esc(b.topic):''}</div><div class="mu">${b.start}–${b.end}</div></div>›</div>`).join('')||'<p class="mu">Bu gün için plan yok.</p>'}
+  ${bl.map(b=>`<div class="blk ${b.done?'done':''}" onclick="editBlock('${b.id}')"><div style="flex:1"><div class="t"><b>${esc(lbl(b))}</b>${b.topic?' · '+esc(b.topic):''}</div><div class="mu">${b.start}–${b.end}</div></div>›</div>`).join('')||'<p class="mu">Bu gün için plan yok.</p>'}
   <div class="row" style="margin-top:12px"><button class="btn" onclick="editBlock(null,'${d}')">＋ Blok ekle</button><button class="ghost" onclick="closeModal()">Kapat</button></div>`);
 }
 function addGoal(){const v=$('ng').value.trim();if(!v)return;(S.goals[curWk]=S.goals[curWk]||[]).push({id:uid(),text:v,done:false});save();render()}
@@ -375,8 +452,8 @@ function fillTpl(){
   let n=0;
   S.tpl.forEach(t=>{
     const d=addDays(curWk,t.day);
-    if(!S.blocks.some(b=>b.date===d&&b.start===t.start&&b.subject===t.subject)){
-      S.blocks.push({id:uid(),date:d,start:t.start,end:t.end,subject:t.subject,topic:t.topic,done:false,actual:null});n++;
+    if(!S.blocks.some(b=>b.date===d&&b.start===t.start&&b.subject===t.subject&&b.area===t.area)){
+      S.blocks.push({id:uid(),date:d,start:t.start,end:t.end,subject:t.subject,area:t.area||'',topic:t.topic,done:false,actual:null});n++;
     }
   });
   save();closeModal();render();toast(n+' blok eklendi');
@@ -385,8 +462,8 @@ function copyPrev(){
   const pw=addDays(curWk,-7);let n=0;
   S.blocks.filter(b=>b.date>=pw&&b.date<curWk).forEach(b=>{
     const d=addDays(b.date,7);
-    if(!S.blocks.some(x=>x.date===d&&x.start===b.start&&x.subject===b.subject)){
-      S.blocks.push({id:uid(),date:d,start:b.start,end:b.end,subject:b.subject,topic:b.topic,done:false,actual:null});n++;
+    if(!S.blocks.some(x=>x.date===d&&x.start===b.start&&x.subject===b.subject&&x.area===b.area)){
+      S.blocks.push({id:uid(),date:d,start:b.start,end:b.end,subject:b.subject,area:b.area||'',topic:b.topic,done:false,actual:null});n++;
     }
   });
   save();closeModal();render();toast(n+' blok kopyalandı');
@@ -438,6 +515,7 @@ function logFocus(m){
   const b=P.sel?S.blocks.find(x=>x.id===P.sel):null;
   if(b)b.actual=(+b.actual||0)+m;
   else S.extra.push({date:today(),min:m,subject:'Serbest'});
+  if(S.dayLog[today()]!=null)S.dayLog[today()]+=m;
   save();
 }
 function pReset(){clearInterval(P.t);P.run=false;P.left=pTot();render()}
@@ -451,7 +529,7 @@ function pAdj(k,n){
 function vOdak(){
   const list=S.blocks.filter(b=>b.date===today()&&!b.done).sort((a,b)=>a.start.localeCompare(b.start));
   if(P.sel&&!list.some(b=>b.id===P.sel))P.sel='';
-  const opts=list.map(b=>`<option value="${b.id}" ${P.sel===b.id?'selected':''}>${b.start} · ${esc(b.subject)}${b.topic?' · '+esc(b.topic):''}</option>`).join('');
+  const opts=list.map(b=>`<option value="${b.id}" ${P.sel===b.id?'selected':''}>${b.start} · ${esc(lbl(b))}${b.topic?' · '+esc(b.topic):''}</option>`).join('');
   return`<select onchange="P.sel=this.value"><option value="">Serbest çalışma</option>${opts}</select>
   <div class="seg"><button class="${P.mode==='work'?'on':''}" onclick="pMode('work')">Çalışma</button><button class="${P.mode==='break'?'on':''}" onclick="pMode('break')">Mola</button></div>
   <div class="grow ctr"><div class="ringwrap">
@@ -489,8 +567,8 @@ function vTakvim(){
     return`<div class="blk" onclick="editEvent('${e.id}')"><div style="flex:1;min-width:0"><b>${esc(e.title)}</b><div class="mu">${e.type} · ${fd(e.date)}.${parse(e.date).getFullYear()}</div></div><span class="pill">${left===0?'Bugün':left+' gün'}</span></div>`;
   }).join('')||'<div class="mu" style="padding:12px 0">Yaklaşan hedef veya deneme yok.</div>'}</div></div>`;
 }
-function editEvent(id){
-  const e=id?S.events.find(x=>x.id===id):{title:'',date:today(),type:'Deneme'};
+function editEvent(id,date){
+  const e=id?S.events.find(x=>x.id===id):{title:'',date:date||today(),type:'Deneme'};
   openModal(`<div class="title">${id?'Düzenle':'Yeni hedef / deneme'}</div>
   <label>Başlık</label><input id="ev_t" value="${esc(e.title)}" placeholder="Örn. Özdebir AYT Denemesi">
   <div class="row"><div style="flex:1"><label>Tarih</label><input type="date" id="ev_d" value="${e.date}"></div>
@@ -622,7 +700,7 @@ function importData(inp){
     try{
       const o=JSON.parse(r.result);
       if(!o.blocks||!o.tpl)throw 0;
-      S=Object.assign(defaults(),o);save();render();toast('Yedek yüklendi');
+      S=Object.assign(defaults(),o);normalize();save();render();toast('Yedek yüklendi');
     }catch(e){alert('Geçersiz yedek dosyası.')}
   };
   r.readAsText(f);
